@@ -62,6 +62,7 @@ void CCatchDataDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Text(pDX, IDC_STATIC_ERROR, m_StaticErr);
+	DDX_Control(pDX, IDC_LIST_DATA, m_ListData);
 }
 
 BEGIN_MESSAGE_MAP(CCatchDataDlg, CDialogEx)
@@ -104,13 +105,90 @@ BOOL CCatchDataDlg::OnInitDialog()
 
 	// TODO: Add extra initialization here
 
-	CString strUrl,strContent;
+	m_ListData.SetExtendedStyle(LVS_EX_FULLROWSELECT|LVS_EX_GRIDLINES);
+	m_ListData.InsertColumn(0,_T("标  题"),LVCFMT_LEFT,500);
+	m_ListData.InsertColumn(1,_T("邮  费"),LVCFMT_LEFT,60);
+	m_ListData.InsertColumn(2,_T("价  格"),LVCFMT_LEFT,60);
+	m_ListData.InsertColumn(3,_T("店铺名"),LVCFMT_LEFT,100);
+	
+	/*
+	m_ListData.InsertItem(0,_T("测试机"));
+	m_ListData.SetItemText(0,1,_T("邮费10"));
+	m_ListData.SetItemText(0,2,_T("价格10"));
 
-	strUrl= _T("http://gw.api.taobao.com/router/rest?sign=8863A7588A54AE9506B4FE81F1F23758&timestamp=2012-02-20+16%3A05%3A50&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&format=xml&q=%E5%86%85%E5%AD%98&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume");
-	//if(HttpGet(strUrl,strContent) != 0)	
-		//MessageBox(strContent);
+	m_ListData.InsertItem(1,_T("测试机"));
+	m_ListData.SetItemText(1,1,_T("邮费10"));
+	m_ListData.SetItemText(1,2,_T("价格10"));
+
+	m_ListData.InsertItem(2,_T("测试机"));
+	m_ListData.SetItemText(2,1,_T("邮费10"));
+	m_ListData.SetItemText(2,2,_T("价格10"));
+
+	return TRUE;
+	*/
 
 
+
+	CString strUrl;
+	CList<ItemsData,ItemsData&> list;
+
+	          //http://gw.api.taobao.com/router/rest?sign=FAEC1756D95EA30934F481FDD1D235E3&timestamp=2012-02-21+13%3A49%3A57&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&format=xml&q=%E5%86%85%E5%AD%98&page_no=3&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume
+	//strUrl= _T("http://gw.api.taobao.com/router/rest?sign=D4F615F7606E0BFF6A4C71850F46C84C&timestamp=2012-02-21+10%3A09%3A26&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&format=xml&q=%E5%86%85%E5%AD%98&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume");
+		
+	char strUTF8[128]={0};
+	WideCharToMultiByte(CP_UTF8,0,L"内存",-1,strUTF8,128,NULL,NULL);
+
+	CString strSearch;
+	for(int i=0;i<strlen(strUTF8);i++)
+	{
+		TCHAR strHex[8]={0};
+		swprintf_s(strHex,8,_T("%%%02X"),(BYTE)strUTF8[i]);
+		strSearch +=strHex;
+	}
+
+	SYSTEMTIME sysTime;
+	::GetLocalTime(&sysTime);
+	int iPage = 1;
+	strUrl = _T("http://gw.api.taobao.com/router/rest?sign=60EB76D1E6363B18EEC71F14E1E2FCB9&timestamp=2012-02-21+15%3A00%3A46&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&format=xml&q=%E5%86%85%E5%AD%98&page_no=1&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume");
+	
+	strUrl.Format(_T("http://gw.api.taobao.com/router/rest?sign=60EB76D1E6363B18EEC71F14E1E2FCB9&")\
+		_T("timestamp=%d-%02d-%02d+15%%3A00%%3A46&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&")\
+		_T("format=xml&q=%s&page_no=%d&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume"),
+		sysTime.wYear,sysTime.wMonth,sysTime.wDay-1,strSearch,iPage);
+	
+	//MessageBox(strUrl);
+	HttpGetData(strUrl,list);
+
+	while( !list.IsEmpty() )
+	{
+		CString str;
+		ItemsData item = list.GetHead();
+		list.RemoveHead();
+
+		const int iRow = m_ListData.GetItemCount();
+		m_ListData.InsertItem(iRow,item.strTitle);
+		str.Format(_T("%.2f"),item.fPost_fee);
+		m_ListData.SetItemText(iRow,1,str);
+		str.Format(_T("%.2f"),item.fPrice);
+		m_ListData.SetItemText(iRow,2,str);
+		m_ListData.SetItemText(iRow,3,item.strNick);
+
+	}
+	/*
+	CString str;
+	str.Format(_T("%d 条记录"),m_ListData.GetItemCount());
+	m_StaticErr = str;
+	UpdateData(FALSE);
+	/*
+	const int iSize = list.GetSize();
+	for(int i = 0;i<iSize;i++)
+	{
+		
+		//ItemsData itme = list.GetAt(i);
+	
+	}
+
+	*/
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -163,7 +241,7 @@ HCURSOR CCatchDataDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData>  &listItems)
+DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData&>  &listItems)
 {
 	if(strUrl.IsEmpty())
 		return 0;
@@ -184,7 +262,7 @@ DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData>  &l
 	}
 
 	
-	WCHAR *pstrWide[512]={0};
+	WCHAR strWide[512]={0};
 	//MultiByteToWideChar(CP_UTF8,0,ReadBuf,-1,pstrWide,iLen);
 
 	CPacket inPacket;
@@ -193,22 +271,22 @@ DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData>  &l
 	inPacket.BuiltTree(ReadBuf,strlen(ReadBuf)+1);
 	AccNode = inPacket.SearchElement("/items_search_response/item_search/items/item");
 	inPacket.SetCurrentElement(AccNode);
-	//while((AccNode = inPacket.SearchNextElement()) != NULL)
-	CStringA str;
-	CStringA strMsg;
+	
+	if(NULL == AccNode)
+	{
+	错误代码返回
+	}
+
+
 	while(AccNode)
 	{
-		str.Empty();
 
 		ElementList::iterator it;
 		ItemsData items;
 		int i = 0;
 		for(it = AccNode->m_children.begin();it != AccNode->m_children.end();it++)
-		{
-			str += (*it)->get_tag().c_str();
-			str += (*it)->getTextContent();
+		{	
 			i++;
-			
 
 			switch(i)			
 			{
@@ -217,43 +295,56 @@ DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData>  &l
 					items.dwCid = atoi((*it)->getTextContent());
 					break;				
 				}
-			case 2:    //nick
-				{
-					items.strNick = (*it)->getTextContent();
+			case 2:    //delist_time
+				{					
 					break;				
 				}
-			case 3:    //num_iid
+			case 3:    //nick
 				{
-					items.dwNum_iid = atoi((*it)->getTextContent());
+					MultiByteToWideChar(CP_UTF8,0,(*it)->getTextContent(),-1,strWide,510);
+					items.strNick = strWide;
 					break;				
 				}
-			case 4:    //post_fee
+			case 4:    //num_iid
+				{
+					items.dwNum_iid = 0;
+					//测试取会值太大atoi函数溢出
+					//items.dwNum_iid = (DWORD)atoi((*it)->getTextContent());
+					break;				
+				}
+			case 5:    //pic_url
+				{					
+					break;
+				}
+			case 6:    //post_fee
 				{
 					items.fPost_fee = atof((*it)->getTextContent());
 					break;
 				}
-			case 5:    //price
+			case 7:    //price
 				{
 					items.fPrice = atof((*it)->getTextContent());
 					break;				
 				}
-			case 6:    //score
+			case 8:    //score
 				{
 					items.dwScore = atoi((*it)->getTextContent());
 					break;
 				}
-			case 7:   //title
+			case 9:   //title
 				{
-					items.strTitle = (*it)->getTextContent();
+					MultiByteToWideChar(CP_UTF8,0,(*it)->getTextContent(),-1,strWide,510);
+					items.strTitle = strWide;
 					break;
 				}
-			case 8:    //type
+			case 10:    //type
 				{
-					items.strType = (*it)->getTextContent();
+					MultiByteToWideChar(CP_UTF8,0,(*it)->getTextContent(),-1,strWide,510);
+					items.strType = strWide;
 					break;
 				}
 
-			case 9:    //volume
+			case 11:    //volume
 				{
 					items.dwVolume = atoi((*it)->getTextContent());
 					break;
@@ -261,17 +352,12 @@ DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData>  &l
 			
 			}
 		}
+
+		listItems.AddTail(items);
 		
-		strMsg+=str;
 		AccNode = inPacket.SearchNextElement(true);
 	}
-
-	int i = strMsg.GetLength();
-	MessageBoxA(NULL,strMsg.GetBuffer(0),NULL,MB_OK);
 	
-
-	
-	delete [] pstrWide;
 	delete [] ReadBuf;	
 
 	return 1;
