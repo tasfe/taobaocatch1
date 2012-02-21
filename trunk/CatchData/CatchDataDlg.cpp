@@ -106,12 +106,10 @@ BOOL CCatchDataDlg::OnInitDialog()
 
 	CString strUrl,strContent;
 
-	strUrl= _T("http://gw.api.taobao.com/router/rest?sign=3DDB776F4B44EE2CBA6FC3A4CB988CD6&timestamp=2012-02-17+14%3A56%3A33&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&format=xml&q=%E6%89%8B%E6%9C%BA&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume");
-	if(HttpGet(strUrl,strContent) != 0)
-	{
-		MessageBox(strContent);
-	}
-	
+	strUrl= _T("http://gw.api.taobao.com/router/rest?sign=8863A7588A54AE9506B4FE81F1F23758&timestamp=2012-02-20+16%3A05%3A50&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&format=xml&q=%E5%86%85%E5%AD%98&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume");
+	//if(HttpGet(strUrl,strContent) != 0)	
+		//MessageBox(strContent);
+
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -165,7 +163,7 @@ HCURSOR CCatchDataDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-DWORD CCatchDataDlg::HttpGet(CString strUrl , CString &strContent)
+DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData>  &listItems)
 {
 	if(strUrl.IsEmpty())
 		return 0;
@@ -185,29 +183,83 @@ DWORD CCatchDataDlg::HttpGet(CString strUrl , CString &strContent)
 		return 0;
 	}
 
-	const int iLen = strlen(ReadBuf);
-	WCHAR *pstrWide = new WCHAR[iLen];
-	MultiByteToWideChar(CP_UTF8,0,ReadBuf,-1,pstrWide,iLen);
-	strContent = pstrWide;
-
+	
+	WCHAR *pstrWide[512]={0};
+	//MultiByteToWideChar(CP_UTF8,0,ReadBuf,-1,pstrWide,iLen);
 
 	CPacket inPacket;
 	DOMElement* TransNode = NULL;
 	DOMElement* AccNode = NULL;
-	inPacket.BuiltTree(ReadBuf,iLen);
-	AccNode = inPacket.SearchElement("/items_search_response/item_search/item_categories/item_category");
+	inPacket.BuiltTree(ReadBuf,strlen(ReadBuf)+1);
+	AccNode = inPacket.SearchElement("/items_search_response/item_search/items/item");
 	inPacket.SetCurrentElement(AccNode);
 	//while((AccNode = inPacket.SearchNextElement()) != NULL)
 	CStringA str;
 	CStringA strMsg;
 	while(AccNode)
 	{
-		
+		str.Empty();
+
 		ElementList::iterator it;
+		ItemsData items;
+		int i = 0;
 		for(it = AccNode->m_children.begin();it != AccNode->m_children.end();it++)
 		{
 			str += (*it)->get_tag().c_str();
 			str += (*it)->getTextContent();
+			i++;
+			
+
+			switch(i)			
+			{
+			case 1:    //cid
+				{
+					items.dwCid = atoi((*it)->getTextContent());
+					break;				
+				}
+			case 2:    //nick
+				{
+					items.strNick = (*it)->getTextContent();
+					break;				
+				}
+			case 3:    //num_iid
+				{
+					items.dwNum_iid = atoi((*it)->getTextContent());
+					break;				
+				}
+			case 4:    //post_fee
+				{
+					items.fPost_fee = atof((*it)->getTextContent());
+					break;
+				}
+			case 5:    //price
+				{
+					items.fPrice = atof((*it)->getTextContent());
+					break;				
+				}
+			case 6:    //score
+				{
+					items.dwScore = atoi((*it)->getTextContent());
+					break;
+				}
+			case 7:   //title
+				{
+					items.strTitle = (*it)->getTextContent();
+					break;
+				}
+			case 8:    //type
+				{
+					items.strType = (*it)->getTextContent();
+					break;
+				}
+
+			case 9:    //volume
+				{
+					items.dwVolume = atoi((*it)->getTextContent());
+					break;
+				}
+			
+			}
 		}
 		
 		strMsg+=str;

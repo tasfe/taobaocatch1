@@ -29,7 +29,7 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 private:
-	DWORD HttpGet(CString strUrl , CString &strContent);
+	DWORD HttpGetData(CString strUrl , CList<ItemsData,ItemsData>  &listItems);
 public:
 	CString m_StaticErr;	
 };
