@@ -126,15 +126,13 @@ BOOL CCatchDataDlg::OnInitDialog()
 
 	return TRUE;
 	*/
-
-
+	
 
 	CString strUrl;
 	CList<ItemsData,ItemsData&> list;
-
-	          //http://gw.api.taobao.com/router/rest?sign=FAEC1756D95EA30934F481FDD1D235E3&timestamp=2012-02-21+13%3A49%3A57&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&format=xml&q=%E5%86%85%E5%AD%98&page_no=3&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume
-	//strUrl= _T("http://gw.api.taobao.com/router/rest?sign=D4F615F7606E0BFF6A4C71850F46C84C&timestamp=2012-02-21+10%3A09%3A26&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&format=xml&q=%E5%86%85%E5%AD%98&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume");
 		
+	//strUrl= _T("http://gw.api.taobao.com/router/rest?sign=D4F615F7606E0BFF6A4C71850F46C84C&timestamp=2012-02-21+10%3A09%3A26&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&format=xml&q=%E5%86%85%E5%AD%98&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume");
+	
 	char strUTF8[128]={0};
 	WideCharToMultiByte(CP_UTF8,0,L"内存",-1,strUTF8,128,NULL,NULL);
 
@@ -146,35 +144,46 @@ BOOL CCatchDataDlg::OnInitDialog()
 		strSearch +=strHex;
 	}
 
-	SYSTEMTIME sysTime;
-	::GetLocalTime(&sysTime);
-	int iPage = 1;
-	strUrl = _T("http://gw.api.taobao.com/router/rest?sign=60EB76D1E6363B18EEC71F14E1E2FCB9&timestamp=2012-02-21+15%3A00%3A46&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&format=xml&q=%E5%86%85%E5%AD%98&page_no=1&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume");
-	
-	strUrl.Format(_T("http://gw.api.taobao.com/router/rest?sign=60EB76D1E6363B18EEC71F14E1E2FCB9&")\
+	for(int iPage = 0;iPage<10;iPage++)
+	{
+
+
+		strUrl.Format(_T("http://gw.api.taobao.com/router/rest?sign=5232075A217C9F02A0C942FB4D6C0EE8&")\
+			_T("timestamp=2012-02-23+15%%3A01%%3A04&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&")\
+			_T("format=xml&q=%s&page_no=%d&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume"),
+			strSearch,iPage);			
+
+		/*
+		SYSTEMTIME sysTime;
+		::GetLocalTime(&sysTime);
+
+		strUrl.Format(_T("http://gw.api.taobao.com/router/rest?sign=60EB76D1E6363B18EEC71F14E1E2FCB9&")\
 		_T("timestamp=%d-%02d-%02d+15%%3A00%%3A46&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&")\
 		_T("format=xml&q=%s&page_no=%d&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume"),
 		sysTime.wYear,sysTime.wMonth,sysTime.wDay-1,strSearch,iPage);
-	
-	//MessageBox(strUrl);
-	HttpGetData(strUrl,list);
+		*/
 
-	while( !list.IsEmpty() )
-	{
-		CString str;
-		ItemsData item = list.GetHead();
-		list.RemoveHead();
+		//MessageBox(strUrl);
 
-		const int iRow = m_ListData.GetItemCount();
-		m_ListData.InsertItem(iRow,item.strTitle);
-		str.Format(_T("%.2f"),item.fPost_fee);
-		m_ListData.SetItemText(iRow,1,str);
-		str.Format(_T("%.2f"),item.fPrice);
-		m_ListData.SetItemText(iRow,2,str);
-		m_ListData.SetItemText(iRow,3,item.strNick);
+		HttpGetData(strUrl,list);
 
+		while( !list.IsEmpty() )
+		{
+			CString str;
+			ItemsData item = list.GetHead();
+			list.RemoveHead();
+
+			const int iRow = m_ListData.GetItemCount();
+			m_ListData.InsertItem(iRow,item.strTitle);
+			str.Format(_T("%.2f"),item.fPost_fee);
+			m_ListData.SetItemText(iRow,1,str);
+			str.Format(_T("%.2f"),item.fPrice);
+			m_ListData.SetItemText(iRow,2,str);
+			m_ListData.SetItemText(iRow,3,item.strNick);
+
+		}
 	}
-	/*
+	
 	CString str;
 	str.Format(_T("%d 条记录"),m_ListData.GetItemCount());
 	m_StaticErr = str;
@@ -243,8 +252,10 @@ HCURSOR CCatchDataDlg::OnQueryDragIcon()
 
 DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData&>  &listItems)
 {
+	BOOL bRet = TRUE;
+
 	if(strUrl.IsEmpty())
-		return 0;
+		return FALSE;
 
 	CWebAccess web;
 	char *ReadBuf = NULL;
@@ -258,7 +269,8 @@ DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData&>  &
 			m_StaticErr += ReadBuf;
 			delete [] ReadBuf;
 		}
-		return 0;
+
+		return FALSE;
 	}
 
 	
@@ -274,7 +286,7 @@ DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData&>  &
 	
 	if(NULL == AccNode)
 	{
-	错误代码返回
+	        bRet = FALSE;//错误代码返回
 	}
 
 
@@ -360,5 +372,5 @@ DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData&>  &
 	
 	delete [] ReadBuf;	
 
-	return 1;
+	return bRet;
 }
