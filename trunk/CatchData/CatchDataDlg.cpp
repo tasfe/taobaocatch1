@@ -77,7 +77,7 @@ END_MESSAGE_MAP()
 BOOL CCatchDataDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-
+	
 	// Add "About..." menu item to system menu.
 
 	// IDM_ABOUTBOX must be in the system command range.
@@ -144,10 +144,8 @@ BOOL CCatchDataDlg::OnInitDialog()
 		strSearch +=strHex;
 	}
 
-	for(int iPage = 0;iPage<10;iPage++)
+	for(int iPage = 0;iPage<1;iPage++)
 	{
-
-
 		strUrl.Format(_T("http://gw.api.taobao.com/router/rest?sign=5232075A217C9F02A0C942FB4D6C0EE8&")\
 			_T("timestamp=2012-02-23+15%%3A01%%3A04&v=2.0&app_key=12129701&method=taobao.items.search&partner_id=top-apitools&")\
 			_T("format=xml&q=%s&page_no=%d&fields=num_iid,title,nick,pic_url,cid,price,type,delist_time,post_fee,score,volume"),
@@ -174,6 +172,7 @@ BOOL CCatchDataDlg::OnInitDialog()
 			list.RemoveHead();
 
 			const int iRow = m_ListData.GetItemCount();
+
 			m_ListData.InsertItem(iRow,item.strTitle);
 			str.Format(_T("%.2f"),item.fPost_fee);
 			m_ListData.SetItemText(iRow,1,str);
@@ -292,7 +291,6 @@ DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData&>  &
 
 	while(AccNode)
 	{
-
 		ElementList::iterator it;
 		ItemsData items;
 		int i = 0;
@@ -347,6 +345,10 @@ DWORD CCatchDataDlg::HttpGetData(CString strUrl , CList<ItemsData,ItemsData&>  &
 				{
 					MultiByteToWideChar(CP_UTF8,0,(*it)->getTextContent(),-1,strWide,510);
 					items.strTitle = strWide;
+					//»•µÙ<span> ±Í«©
+					items.strTitle.Replace(_T("&lt;span class=H&gt;"),_T("@"));
+					items.strTitle.Replace(_T("&lt;/span&gt;"),_T("@"));
+
 					break;
 				}
 			case 10:    //type
